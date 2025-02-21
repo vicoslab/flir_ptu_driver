@@ -28,6 +28,7 @@ install(DIRECTORY
 install(PROGRAMS
   scripts/ptu_driver.py
   scripts/ptu_node.py
+  scripts/twist_demo_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
