@@ -31,3 +31,33 @@ Or with run:
 ```bash
 ros2 run flir_ptu_driver ptu_node.py
 ```
+
+## UDEV Rules (optional)
+
+To make the serial port consistent, we can map it to a specific device based on its parameters.
+
+
+Find the `ID_VENDOR_ID` and `ID_MODEL_ID` with:
+```bash
+udevadm info -q all -n /dev/ttyUSB0
+```
+
+
+Then create the rule:
+```bash
+sudo nano /etc/udev/rules.d/99-pan-tilt.rules
+```
+
+And add:
+```bash
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0557", ATTRS{idProduct}=="2008", SYMLINK+="pantilt", MODE="0666"
+```
+
+Reload:
+
+```bash
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+We should now have a symlink from `/dev/ttyUSBX` -> `/dev/pantilt`.
