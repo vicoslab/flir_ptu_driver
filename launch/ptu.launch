@@ -1,0 +1,9 @@
+<launch>
+
+  <node pkg="flir_ptu_driver" type="ptu_node.py" name="flir_ptu_driver" output="screen">
+    <param name="port" value="/dev/ttyUSB0" />
+    <param name="baud" value="9600" />
+    <param name="publishing_rate" value="5.0" />
+  </node>
+
+</launch>

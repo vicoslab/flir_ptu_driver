@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A basic ROS 2 driver for FLIR E-series Pan-Tilt units, based on [FLIR-PTU-Python](https://github.com/hmorris94/FLIR-PTU-Python).
+A basic ROS One driver for FLIR E-series Pan-Tilt units, based on [FLIR-PTU-Python](https://github.com/hmorris94/FLIR-PTU-Python).
 
 ## Parameters
 
@@ -24,12 +24,12 @@ A basic ROS 2 driver for FLIR E-series Pan-Tilt units, based on [FLIR-PTU-Python
 ## Running the Node
 
 ```bash
-ros2 launch flir_ptu_driver ptu.launch.py
+roslaunch flir_ptu_driver ptu.launch
 ```
 
 Or with run:
 ```bash
-ros2 run flir_ptu_driver ptu_node.py
+rosrun flir_ptu_driver ptu_node.py
 ```
 
 ## UDEV Rules (optional)
