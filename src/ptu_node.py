@@ -2,8 +2,11 @@
 import math
 import rospy
 from sensor_msgs.msg import JointState
+from geometry_msgs.msg import TransformStamped
+import tf2_ros
 from ptu_driver import PTU
 from threading import Lock
+from tf.transformations import quaternion_from_euler
 
 def deg2rad(deg):
     return deg * math.pi / 180.0
@@ -16,10 +19,18 @@ class PTUNode:
     def __init__(self):
         rospy.init_node('ptu_node')
 
+        # TF broadcaster
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
+
+        # Frame names
+        self.base_frame = 'ptu_base'
+        self.yaw_frame = 'ptu_yaw'
+        self.pitch_frame = 'ptu_pitch'
+
         # Parameters
         port = rospy.get_param('~port', '/dev/ttyUSB0')
         baud = rospy.get_param('~baud', 9600)
-        self.rate = rospy.get_param('~publishing_rate', 5.0)
+        self.rate = rospy.get_param('~publishing_rate', 20.0)
 
         # Initialize PTU
         try:
@@ -60,7 +71,7 @@ class PTUNode:
         rospy.loginfo('PTU node initialized')
 
     def publish_state(self, event):
-        """Publish current PTU state as JointState message"""
+        """Publish current PTU state as JointState and TF"""
         try:
             with self.ptu_lock:
                 pan_pos, tilt_pos = self.ptu.getPosition()
@@ -69,18 +80,55 @@ class PTUNode:
             pan_angle_deg = pan_pos * (self.ptu.panResolution / 3600.0)
             tilt_angle_deg = tilt_pos * (self.ptu.tiltResolution / 3600.0)
 
-            pan_angle_rad = deg2rad(pan_angle_deg)
-            tilt_angle_rad = deg2rad(tilt_angle_deg)
+            pan_angle_rad = deg2rad(pan_angle_deg)   # yaw
+            tilt_angle_rad = deg2rad(tilt_angle_deg) # pitch
 
+            now = rospy.Time.now()
+
+            # ---- JointState ----
             msg = JointState()
-            msg.header.stamp = rospy.Time.now()
+            msg.header.stamp = now
             msg.name = ['ptu_pan', 'ptu_tilt']
             msg.position = [pan_angle_rad, tilt_angle_rad]
-
             self.state_pub.publish(msg)
 
+            # ---- TF: base -> yaw ----
+            t_base_yaw = TransformStamped()
+            t_base_yaw.header.stamp = now
+            t_base_yaw.header.frame_id = self.base_frame
+            t_base_yaw.child_frame_id = self.yaw_frame
+
+            t_base_yaw.transform.translation.x = 0.04
+            t_base_yaw.transform.translation.y = -0.015
+            t_base_yaw.transform.translation.z = 0.05
+
+            q_yaw = quaternion_from_euler(0.0, 0.0, pan_angle_rad)
+            t_base_yaw.transform.rotation.x = q_yaw[0]
+            t_base_yaw.transform.rotation.y = q_yaw[1]
+            t_base_yaw.transform.rotation.z = q_yaw[2]
+            t_base_yaw.transform.rotation.w = q_yaw[3]
+
+            # ---- TF: yaw -> pitch ----
+            t_yaw_pitch = TransformStamped()
+            t_yaw_pitch.header.stamp = now
+            t_yaw_pitch.header.frame_id = self.yaw_frame
+            t_yaw_pitch.child_frame_id = self.pitch_frame
+
+            t_yaw_pitch.transform.translation.x = 0.0
+            t_yaw_pitch.transform.translation.y = 0.0
+            t_yaw_pitch.transform.translation.z = 0.045
+
+            q_pitch = quaternion_from_euler(0.0, -tilt_angle_rad, 0.0)
+            t_yaw_pitch.transform.rotation.x = q_pitch[0]
+            t_yaw_pitch.transform.rotation.y = q_pitch[1]
+            t_yaw_pitch.transform.rotation.z = q_pitch[2]
+            t_yaw_pitch.transform.rotation.w = q_pitch[3]
+
+            self.tf_broadcaster.sendTransform([t_base_yaw, t_yaw_pitch])
+
         except Exception as e:
-            rospy.logerr(f'Error publishing state: {str(e)}')
+            rospy.logerr(f'Error publishing state/TF: {str(e)}')
+
 
     def cmd_callback(self, msg):
         """Handle incoming command messages"""

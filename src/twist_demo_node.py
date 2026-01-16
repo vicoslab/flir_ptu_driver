@@ -16,10 +16,10 @@ class PTUTwistController:
         rospy.init_node('ptu_twist_controller')
 
         # Parameters (degrees, converted to radians)
-        pan_min_deg = rospy.get_param('~pan_min_deg', -90.0)
-        pan_max_deg = rospy.get_param('~pan_max_deg', 90.0)
-        tilt_min_deg = rospy.get_param('~tilt_min_deg', -25.0)
-        tilt_max_deg = rospy.get_param('~tilt_max_deg', 25.0)
+        pan_min_deg = rospy.get_param('~pan_min_deg', -120.0)
+        pan_max_deg = rospy.get_param('~pan_max_deg', 120.0)
+        tilt_min_deg = rospy.get_param('~tilt_min_deg', -45.0)
+        tilt_max_deg = rospy.get_param('~tilt_max_deg', 45.0)
         self.update_rate = rospy.get_param('~update_rate', 4.0)
 
         self.pan_min = deg2rad(pan_min_deg)
